@@ -466,11 +466,11 @@ class HeadingAutolinkSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
+		display(): void {
+			const { containerEl } = this;
+			containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Heading Autolink Suggestions" });
+			new Setting(containerEl).setName("Heading autolink suggestions").setHeading();
 
 		new Setting(containerEl)
 			.setName("Minimum characters before suggestions")
@@ -675,7 +675,7 @@ export default class HeadingAutolinkPlugin extends Plugin {
 		if (!this.settings.debugLogging) {
 			return;
 		}
-		console.log("[HeadingAutolink]", ...args);
+		console.debug("[HeadingAutolink]", ...args);
 	}
 
 	hasForeignSuggestionPopupOpen(): boolean {
