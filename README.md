@@ -30,6 +30,7 @@ npm run build
 
 - `Minimum characters before suggestions`
 - `Enable fuzzy matching`
+- `Minimum fuzzy score` (controls fuzzy sensitivity)
 - `Case-sensitive matching`
 - `Insert link alias`
 - `Compatibility with other suggesters`

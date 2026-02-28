@@ -15,6 +15,7 @@ import {
 interface HeadingAutolinkSettings {
 	minChars: number;
 	enableFuzzyMatching: boolean;
+	minFuzzyScore: number;
 	caseSensitive: boolean;
 	insertAlias: boolean;
 	includeFolderInPreview: boolean;
@@ -27,6 +28,7 @@ interface HeadingAutolinkSettings {
 const DEFAULT_SETTINGS: HeadingAutolinkSettings = {
 	minChars: 3,
 	enableFuzzyMatching: true,
+	minFuzzyScore: 18,
 	caseSensitive: false,
 	insertAlias: true,
 	includeFolderInPreview: true,
@@ -140,7 +142,13 @@ class HeadingIndex {
 
 		for (const entry of this.allEntries) {
 			const candidate = settings.caseSensitive ? entry.heading : entry.headingLower;
-			const scoreResult = scoreCandidate(candidate, normalizedQuery, queryTokens, settings.enableFuzzyMatching);
+			const scoreResult = scoreCandidate(
+				candidate,
+				normalizedQuery,
+				queryTokens,
+				settings.enableFuzzyMatching,
+				settings.minFuzzyScore
+			);
 			if (!scoreResult) {
 				continue;
 			}
@@ -207,7 +215,8 @@ function scoreCandidate(
 	candidate: string,
 	query: string,
 	queryTokens: string[],
-	enableFuzzy: boolean
+	enableFuzzy: boolean,
+	minFuzzyScore: number
 ): { score: number; matchType: ScoredHeading["matchType"] } | null {
 	if (candidate === query) {
 		return { score: 1000, matchType: "exact" };
@@ -229,7 +238,7 @@ function scoreCandidate(
 
 	if (enableFuzzy) {
 		const fuzzyScore = fuzzySubsequenceScore(candidate, query);
-		if (fuzzyScore > 0) {
+		if (fuzzyScore >= minFuzzyScore) {
 			return { score: 250 + fuzzyScore, matchType: "fuzzy" };
 		}
 	}
@@ -485,6 +494,20 @@ class HeadingAutolinkSettingTab extends PluginSettingTab {
 					this.plugin.settings.enableFuzzyMatching = value;
 					await this.plugin.saveSettings();
 				})
+			);
+
+		new Setting(containerEl)
+			.setName("Minimum fuzzy score")
+			.setDesc("Higher value is stricter (fewer fuzzy results). Lower value is more permissive.")
+			.addSlider((slider) =>
+				slider
+					.setLimits(1, 80, 1)
+					.setValue(this.plugin.settings.minFuzzyScore)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.minFuzzyScore = value;
+						await this.plugin.saveSettings();
+					})
 			);
 
 		new Setting(containerEl)
