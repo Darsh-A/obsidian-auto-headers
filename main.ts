@@ -59,7 +59,7 @@ class HeadingIndex {
 	private entriesByPath = new Map<string, HeadingEntry[]>();
 	private allEntries: HeadingEntry[] = [];
 	private pendingPaths = new Set<string>();
-	private flushTimer: number | null = null;
+	private flushTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
 
 	constructor(app: App, log: (...args: unknown[]) => void) {
 		this.app = app;
@@ -90,13 +90,13 @@ class HeadingIndex {
 
 		this.pendingPaths.add(file.path);
 		if (this.flushTimer !== null) {
-			window.clearTimeout(this.flushTimer);
+			globalThis.clearTimeout(this.flushTimer);
 		}
 
-			this.flushTimer = window.setTimeout(() => {
-				const pathsToRefresh = Array.from(this.pendingPaths);
-				this.pendingPaths.clear();
-				this.flushTimer = null;
+		this.flushTimer = globalThis.setTimeout(() => {
+			const pathsToRefresh = Array.from(this.pendingPaths);
+			this.pendingPaths.clear();
+			this.flushTimer = null;
 
 			for (const path of pathsToRefresh) {
 				const abstract = this.app.vault.getAbstractFileByPath(path);
@@ -107,12 +107,12 @@ class HeadingIndex {
 				}
 			}
 
-				this.refreshFlatCache();
-				this.log("index.flushReindex", {
-					changedFiles: pathsToRefresh.length,
-					headings: this.allEntries.length
-				});
-			}, 120);
+			this.refreshFlatCache();
+			this.log("index.flushReindex", {
+				changedFiles: pathsToRefresh.length,
+				headings: this.allEntries.length
+			});
+		}, 120);
 	}
 
 	handleRename(file: TAbstractFile, oldPath: string): void {
@@ -342,7 +342,7 @@ class HeadingEditorSuggest extends EditorSuggest<ScoredHeading> {
 	triggerManual(editor: Editor, file: TFile): void {
 		this.manualTriggerActive = true;
 		(this as unknown as { trigger: (e: Editor, f: TFile, allowNoTrigger?: boolean) => void }).trigger(editor, file, true);
-		window.setTimeout(() => {
+		globalThis.setTimeout(() => {
 			this.manualTriggerActive = false;
 		}, 250);
 	}
@@ -466,11 +466,11 @@ class HeadingAutolinkSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-		display(): void {
-			const { containerEl } = this;
-			containerEl.empty();
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
 
-			new Setting(containerEl).setName("Heading autolink suggestions").setHeading();
+		new Setting(containerEl).setName("Behavior").setHeading();
 
 		new Setting(containerEl)
 			.setName("Minimum characters before suggestions")
@@ -580,7 +580,7 @@ class HeadingAutolinkSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Compatibility with other suggesters")
-			.setDesc("When another suggestion popup is open (e.g. Various Complements), suppress auto-trigger. Use the command to trigger heading suggestions manually.")
+			.setDesc("When another suggestion popup is open, suppress auto-trigger. Use the command to trigger heading suggestions manually.")
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.suppressWhenOtherSuggestionsOpen).onChange(async (value) => {
 					this.plugin.settings.suppressWhenOtherSuggestionsOpen = value;
@@ -607,7 +607,7 @@ export default class HeadingAutolinkPlugin extends Plugin {
 		this.addSettingTab(new HeadingAutolinkSettingTab(this.app, this));
 		this.addCommand({
 			id: "trigger-heading-autolink-suggestions",
-			name: "Trigger heading autolink suggestions",
+			name: "Trigger heading suggestions",
 			editorCallback: (editor) => {
 				const file = this.app.workspace.getActiveFile();
 				if (!(file instanceof TFile)) {
@@ -667,19 +667,19 @@ export default class HeadingAutolinkPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		const data = await this.loadData();
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+		const data = (await this.loadData()) as Partial<HeadingAutolinkSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
 	}
 
 	logDebug(...args: unknown[]): void {
 		if (!this.settings.debugLogging) {
 			return;
 		}
-		console.debug("[HeadingAutolink]", ...args);
+		globalThis.console.debug("[HeadingAutolink]", ...args);
 	}
 
 	hasForeignSuggestionPopupOpen(): boolean {
-		const containers = Array.from(document.querySelectorAll(".suggestion-container"));
+		const containers = Array.from(globalThis.document.querySelectorAll(".suggestion-container"));
 		for (const container of containers) {
 			if (!(container instanceof HTMLElement)) {
 				continue;
