@@ -1,6 +1,6 @@
 {
   "id": "auto-headers",
-  "name": "Obsidian Auto Headers",
+  "name": "Auto Headers",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
   "description": "Suggest and insert heading links while typing normal text.",
