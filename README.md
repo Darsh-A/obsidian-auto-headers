@@ -1,4 +1,4 @@
-# Obsidian Auto Headers
+# Auto Headers
 Obsidian plugin that suggests note headings while typing normal text and inserts links like:
 
 - `[[File#Heading]]`
